@@ -65,9 +65,6 @@ class YouPlay(object):
 
     def get_sem(self):
         """Get semaphore."""
-        sem_ = self.sem
-        if self.sem == 0:
-            self.set_sem(1)
         return self.sem
 
     def set_sem(self, sem_):
@@ -160,7 +157,6 @@ class YouPlay(object):
                             close_flag = 1
                             self.set_close_flag(close_flag)
                             self.close_video()
-                        self.set_sem(0)
                         os.system('clear')
 
             except IOError:
@@ -189,11 +185,9 @@ class YouPlay(object):
         random.seed(seconds)
         random.shuffle(playlist)
         start_new_thread(self.check_event, ())
-        while self.get_track_count() < len(playlist):
-            track_count = self.get_track_count()
-            video_url = playlist[track_count]
-            track_count += 1
-            self.track_count = track_count
+        while self.track_count < len(playlist):
+            video_url = playlist[self.track_count]
+            self.track_count += 1
             try:
                 video = pafy.new(video_url)
                 video_best = video.getbest(preftype="mp4")
@@ -211,6 +205,7 @@ class YouPlay(object):
                     break
             except IOError, valid_link_error:
                 # TODO: implement algorithm to handle invalid URLs
+                self.sem = 0
                 time.sleep(0)
             
 
