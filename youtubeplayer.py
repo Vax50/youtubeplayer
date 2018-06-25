@@ -65,11 +65,19 @@ class YouPlay(object):
 
     def get_sem(self):
         """Get semaphore."""
+        sem_ = self.sem
+        if self.sem == 0:
+            self.set_sem(1)
         return self.sem
 
     def set_sem(self, sem_):
         """Set semaphore."""
-        self.sem = sem_
+        if sem_ == 0:
+            if self.sem == 1:
+                self.sem = sem_
+        if sem_ == 1:
+            if self.sem == 0:
+                self.sem = sem_
 
     def close_video(self):
         """Quit a video."""
@@ -152,6 +160,7 @@ class YouPlay(object):
                             close_flag = 1
                             self.set_close_flag(close_flag)
                             self.close_video()
+                        self.set_sem(0)
                         os.system('clear')
 
             except IOError:
@@ -194,9 +203,9 @@ class YouPlay(object):
                 pid = subprocess.check_output(["pidof", 'omxplayer.bin'])
                 pid = pid.replace("\n", "")
                 while check_pid(int(pid)):
-                    self.sem = 1
+                    self.set_sem(1)
                     time.sleep(0.2)
-                    self.sem = 0
+                    self.set_sem(0)
                 # close app
                 if self.close_flag == 1:
                     break
