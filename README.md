@@ -23,7 +23,7 @@ Install pafy and omxplayer-wrapper:
 
     pip install omxplayer-wrapper pafy
 
-Usage:
+# Usage
 
     cat playlistexample.txt | sudo python youtubeplayer.py
 
