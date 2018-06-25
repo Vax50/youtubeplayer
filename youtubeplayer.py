@@ -192,12 +192,12 @@ class YouPlay(object):
         while self.get_track_count() < len(playlist):
             track_count = self.get_track_count()
             video_url = playlist[track_count]
+            track_count += 1
+            self.track_count = track_count
             try:
                 video = pafy.new(video_url)
                 video_best = video.getbest(preftype="mp4")
                 video_url = video_best.url
-                track_count += 1
-                self.track_count = track_count
                 self.player = OMXPlayer(
                     video_url, ['-b', '-o', 'alsa', '--layout', '5.1'])
                 pid = subprocess.check_output(["pidof", 'omxplayer.bin'])
@@ -210,7 +210,9 @@ class YouPlay(object):
                 if self.close_flag == 1:
                     break
             except IOError, valid_link_error:
+                # TODO: implement algorithm to handle invalid URLs
                 time.sleep(0)
+            
 
 def main(argin):
     """Starting the main routine."""
