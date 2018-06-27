@@ -114,11 +114,10 @@ class YouPlay(object):
                             # one track back
                             track_count = self.get_track_count()
                             if track_count == 1:
-                                track_count -= 1
-                            else:
-                                track_count -= 2
-                                self.close_video()
-                            #self.set_track_count(track_count)
+                                self.track_count -= 1
+                            elif track_count >= 2:
+                                self.track_count -= 2
+                            self.close_video()    
                         elif key_pressed == JoyKeyStruct(1, 1, 6):
                             # play backward
                             player = self.get_player()
