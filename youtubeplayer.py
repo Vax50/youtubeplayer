@@ -179,10 +179,8 @@ class YouPlay(object):
                 url = line
                 playlist.insert(listcount, url)
                 listcount += 1
-        local_time = time.localtime()
-        seconds = time.mktime(local_time)
-        random.seed(seconds)
-        random.shuffle(playlist)
+        randvalue = random.SystemRandom()
+        randvalue.shuffle(playlist)
         start_new_thread(self.check_event, ())
         while self.track_count < len(playlist):
             video_url = playlist[self.track_count]
