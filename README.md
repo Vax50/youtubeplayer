@@ -14,6 +14,7 @@ for now.
 - Python 2 >=2.7.9
 - xboxdrv
 
+# Install
 Install pip and omxplayer:
 
     sudo apt-get update && sudo apt-get upgrade
