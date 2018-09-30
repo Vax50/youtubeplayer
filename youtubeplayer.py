@@ -19,13 +19,12 @@ import os
 import re
 import random
 import subprocess
-import struct
 import time
 import errno
+from keymap import CheckEvent
 from omxplayer.player import OMXPlayer
 from collections import namedtuple
 from thread import start_new_thread
-from dbus.exceptions import DBusException
 
 JoyKeyStruct = namedtuple("JoyKeyStruct", "tp vl nm")
 
@@ -69,12 +68,10 @@ class YouPlay(object):
 
     def set_sem(self, sem_):
         """Set semaphore."""
-        if sem_ == 0:
-            if self.sem == 1:
-                self.sem = sem_
-        if sem_ == 1:
-            if self.sem == 0:
-                self.sem = sem_
+        if sem_ == 0 and self.sem == 1:
+            self.sem = sem_
+        if sem_ == 1 and self.sem == 0:
+            self.sem = sem_
 
     def close_video(self):
         """Quit a video."""
@@ -85,90 +82,11 @@ class YouPlay(object):
             self.set_sem(sem)
             player.quit()
 
-    def check_event(self):
-        """Check for a controlerkey event and executes
-        additional instructions."""
-        joy_dev_path = '/dev/input/js0'
-        close_flag = 0
-        play_pause_flag = 0
-        while True:
-            try:
-                joy_dev = open(joy_dev_path, 'rb')
-                break
-            except IOError:
-                time.sleep(1)
-
-        while True:
-            sem = self.get_sem()
-            try:
-                if sem == 1:
-                    dev_buf = joy_dev.read(8)
-                    if dev_buf:
-                        joytime, value, button_type, number = struct.unpack(
-                            'IhBB', dev_buf)
-                        key_pressed = JoyKeyStruct(button_type, value, number)
-                        if key_pressed == JoyKeyStruct(1, 1, 5):
-                            # next track forward
-                            self.close_video()
-                        elif key_pressed == JoyKeyStruct(1, 1, 4):
-                            # one track back
-                            track_count = self.get_track_count()
-                            if track_count == 1:
-                                self.track_count -= 1
-                            elif track_count >= 2:
-                                self.track_count -= 2
-                            self.close_video()    
-                        elif key_pressed == JoyKeyStruct(1, 1, 6):
-                            # play backward
-                            player = self.get_player()
-                            try:
-                                position_sec = player.position()
-                                player.set_position(position_sec - 20)
-                            except DBusException:
-                                self.close_video()
-                        elif key_pressed == JoyKeyStruct(1, 1, 7):
-                            # play vorward
-                            player = self.get_player()
-                            try:
-                                position_sec = player.position()
-                                player.set_position(position_sec + 20)
-                            except DBusException:
-                                self.close_video()
-                        elif key_pressed == JoyKeyStruct(1, 1, 0):
-                            # pause and play video
-                            player = self.get_player()
-                            if play_pause_flag == 0:
-                                play_pause_flag += 1
-                                player.pause()
-                            else:
-                                play_pause_flag -= 1
-                                player.play()
-                        elif key_pressed == JoyKeyStruct(2, -32767, 5):
-                            # volume up
-                            subprocess.call(
-                                ["amixer", '-M', 'set', 'PCM', '5%+'])
-                        elif key_pressed == JoyKeyStruct(2, 32767, 5):
-                            # volume down
-                            subprocess.call(
-                                ["amixer", '-M', 'set', 'PCM', '5%-'])
-                        elif key_pressed == JoyKeyStruct(1, 1, 1):
-                            # close application
-                            close_flag = 1
-                            self.set_close_flag(close_flag)
-                            self.close_video()
-                        os.system('clear')
-
-            except IOError:
-                try:
-                    joy_dev = open(joy_dev_path, 'rb')
-                except IOError:
-                    time.sleep(1)
-            time.sleep(0.05)
-
     def start_player(self, argin):
         """This is the main function of this class. This function creates
         a playlist from standard input. Main functionality is to playing
         videos from the created playlist in a random order."""
+        checkevent = CheckEvent()
         playlist = []
         listcount = 0
         for line in argin:
@@ -181,7 +99,7 @@ class YouPlay(object):
                 listcount += 1
         randvalue = random.SystemRandom()
         randvalue.shuffle(playlist)
-        start_new_thread(self.check_event, ())
+        start_new_thread(checkevent.start_listen, (self,))
         while self.track_count < len(playlist):
             video_url = playlist[self.track_count]
             self.track_count += 1
@@ -209,8 +127,8 @@ class YouPlay(object):
 def main(argin):
     """Starting the main routine."""
     if argin != None:
-        player = YouPlay()
-        player.start_player(argin)
+        youplayer = YouPlay()
+        youplayer.start_player(argin)
     else:
         print 'Usage: youtubeplayer.py "<YoutubeVideoUrl>"\n'
 
