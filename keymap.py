@@ -3,6 +3,7 @@ import time
 import struct
 import os
 import subprocess
+import keyboard
 from collections import namedtuple
 
 JoyKeyStruct = namedtuple("JoyKeyStruct", "tp vl nm")
@@ -16,7 +17,7 @@ class CheckEvent:
     actionList = [8]
     xbox_joy_dev = None
 
-    def __init__(self):
+    def set_dev_type(self):
         if self.controller_dev == 0:
             self.actionList.insert(0, JoyKeyStruct(1, 1, 5))
             self.actionList.insert(1, JoyKeyStruct(1, 1, 4))
@@ -26,6 +27,18 @@ class CheckEvent:
             self.actionList.insert(5, JoyKeyStruct(2, -32767, 5))
             self.actionList.insert(6, JoyKeyStruct(2, 32767, 5))
             self.actionList.insert(7, JoyKeyStruct(1, 1, 1))
+        elif self.controller_dev == 1:
+            self.actionList.insert(0, 'f')
+            self.actionList.insert(1, 'b')
+            self.actionList.insert(2, 'right')
+            self.actionList.insert(3, 'left')
+            self.actionList.insert(4, 'space')
+            self.actionList.insert(5, 'up')
+            self.actionList.insert(6, 'down')
+            self.actionList.insert(7, 'esc')
+
+    def __init__(self):
+        self.set_dev_type()
 
     """Dev 0 = XboxJoy, Dev 1 = Keyboard"""
     def check_xbox_joy_dev(self):
@@ -53,10 +66,13 @@ class CheckEvent:
                 except IOError:
                     time.sleep(1)
                     return False
+        if self.controller_dev == 1:
+            key_event = keyboard.read_event()
+            return key_event.name
 
     def start_listen(self, youplay):
-        
-        self.check_xbox_joy_dev()
+        if self.controller_dev == 0:
+            self.check_xbox_joy_dev()
         while True:
             sem = youplay.get_sem()
             if sem == 1:
