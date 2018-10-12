@@ -30,8 +30,8 @@ class CheckEvent:
         elif self.controller_dev == 1:
             self.actionList.insert(0, 'f')
             self.actionList.insert(1, 'b')
-            self.actionList.insert(2, 'right')
-            self.actionList.insert(3, 'left')
+            self.actionList.insert(2, 'left')
+            self.actionList.insert(3, 'right')
             self.actionList.insert(4, 'space')
             self.actionList.insert(5, 'up')
             self.actionList.insert(6, 'down')
@@ -67,8 +67,13 @@ class CheckEvent:
                     time.sleep(1)
                     return False
         if self.controller_dev == 1:
-            key_event = keyboard.read_event()
-            return key_event.name
+            try:
+                key_event = keyboard.read_event()
+                if key_event.event_type == 'down':
+                    return key_event.name
+                return False
+            except IOError:
+                return False
 
     def start_listen(self, youplay):
         if self.controller_dev == 0:
@@ -127,5 +132,5 @@ class CheckEvent:
                         close_flag = 1
                         youplay.set_close_flag(close_flag)
                         youplay.close_video()
-                    os.system('clear')
+                    #os.system('clear')
             time.sleep(0.05)
