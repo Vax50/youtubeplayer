@@ -5,6 +5,7 @@ import os
 import subprocess
 import keyboard
 from collections import namedtuple
+from threading import Semaphore
 
 JoyKeyStruct = namedtuple("JoyKeyStruct", "tp vl nm")
 
@@ -78,59 +79,64 @@ class CheckEvent:
     def start_listen(self, youplay):
         if self.controller_dev == 0:
             self.check_xbox_joy_dev()
+        sem = youplay.get_sem()
         while True:
-            sem = youplay.get_sem()
-            if sem == 1:
-                key_pressed = self.get_input_event()
-                if key_pressed != False:
-                    if key_pressed == self.actionList[0]:
-                        # next track forward
+            key_pressed = self.get_input_event()
+            if key_pressed != False:
+                if key_pressed == self.actionList[0]:
+                    # next track forward
+                    youplay.close_video()
+                elif key_pressed == self.actionList[1]:
+                    # one track back
+                    track_count = youplay.get_track_count()
+                    if track_count == 1:
+                        youplay.track_count -= 1
+                    elif track_count >= 2:
+                        youplay.track_count -= 2
+                    youplay.close_video()    
+                elif key_pressed == self.actionList[2]:
+                    # play backward
+                    sem.acquire()
+                    player = youplay.get_player()
+                    sem.release()
+                    try:
+                        position_sec = player.position()
+                        player.set_position(position_sec - 20)
+                    except DBusException:
                         youplay.close_video()
-                    elif key_pressed == self.actionList[1]:
-                        # one track back
-                        track_count = youplay.get_track_count()
-                        if track_count == 1:
-                            youplay.track_count -= 1
-                        elif track_count >= 2:
-                            youplay.track_count -= 2
-                            youplay.close_video()    
-                    elif key_pressed == self.actionList[2]:
-                        # play backward
-                        player = youplay.get_player()
-                        try:
-                            position_sec = player.position()
-                            player.set_position(position_sec - 20)
-                        except DBusException:
-                            youplay.close_video()
-                    elif key_pressed == self.actionList[3]:
-                        # play vorward
-                        player = youplay.get_player()
-                        try:
-                            position_sec = player.position()
-                            player.set_position(position_sec + 20)
-                        except DBusException:
-                            youplay.close_video()
-                    elif key_pressed == self.actionList[4]:
-                        # pause and play video
-                        player = youplay.get_player()
-                        if self.play_pause_flag == 0:
-                            self.play_pause_flag += 1
-                            player.pause()
-                        else:
-                            self.play_pause_flag -= 1
-                            player.play()
-                    elif key_pressed == self.actionList[5]:
-                        # volume up
-                        subprocess.call(
-                            ["amixer", '-M', 'set', 'PCM', '5%+'])
-                    elif key_pressed == self.actionList[6]:
-                        # volume down
-                        subprocess.call(
-                            ["amixer", '-M', 'set', 'PCM', '5%-'])
-                    elif key_pressed == self.actionList[7]:
-                        # close application
-                        close_flag = 1
-                        youplay.set_close_flag(close_flag)
+                elif key_pressed == self.actionList[3]:
+                    # play vorward
+                    sem.acquire()
+                    player = youplay.get_player()
+                    sem.release()
+                    try:
+                        position_sec = player.position()
+                        player.set_position(position_sec + 20)
+                    except DBusException:
                         youplay.close_video()
-                    #os.system('clear')
+                elif key_pressed == self.actionList[4]:
+                    # pause and play video
+                    sem.acquire()
+                    player = youplay.get_player()
+                    sem.release()
+                    if self.play_pause_flag == 0:
+                        self.play_pause_flag += 1
+                        player.pause()
+                    else:
+                        self.play_pause_flag -= 1
+                        player.play()
+                elif key_pressed == self.actionList[5]:
+                    # volume up
+                    subprocess.call(
+                        ["amixer", '-M', 'set', 'PCM', '5%+'])
+                elif key_pressed == self.actionList[6]:
+                    # volume down
+                    subprocess.call(
+                        ["amixer", '-M', 'set', 'PCM', '5%-'])
+                elif key_pressed == self.actionList[7]:
+                    # close application
+                    close_flag = 1
+                    youplay.set_close_flag(close_flag)
+                    youplay.close_video()
+                #os.system('clear')
             time.sleep(0.05)

@@ -25,6 +25,7 @@ from keymap import CheckEvent
 from omxplayer.player import OMXPlayer
 from collections import namedtuple
 from thread import start_new_thread
+from threading import Semaphore
 
 JoyKeyStruct = namedtuple("JoyKeyStruct", "tp vl nm")
 
@@ -36,15 +37,15 @@ def check_pid(pid_):
         os.kill(pid_, 0)
     except OSError, read_pid_error:
         return read_pid_error.errno == errno.EPERM
-    else:
-        return True
+    
+    return True
 
 class YouPlay(object):
     """This is the class, wich provides the main functions of this
     programm. The playing of videos starts in the start_player function."""
     track_count = 0
     close_flag = 0
-    sem = 0
+    sem = Semaphore()
 
     def get_player(self):
         """Returns the OMXPlayer object."""
@@ -75,12 +76,9 @@ class YouPlay(object):
 
     def close_video(self):
         """Quit a video."""
-        player = self.get_player()
-        sem = self.get_sem()
-        if sem == 1:
-            sem = 0
-            self.set_sem(sem)
-            player.quit()
+        self.sem.acquire()
+        self.player.quit()
+        self.sem.release()
 
     def start_player(self, argin):
         """This is the main function of this class. This function creates
@@ -101,6 +99,7 @@ class YouPlay(object):
         randvalue.shuffle(playlist)
         start_new_thread(checkevent.start_listen, (self,))
         while self.track_count < len(playlist):
+            self.sem.acquire()
             video_url = playlist[self.track_count]
             self.track_count += 1
             try:
@@ -108,19 +107,19 @@ class YouPlay(object):
                 video_best = video.getbest(preftype="mp4")
                 video_url = video_best.url
                 self.player = OMXPlayer(
-                    video_url, ['-b', '-o', 'alsa', '--layout', '5.1'])
+                    video_url, ['-b', '--no-osd', '-o', 'alsa', '--layout', '5.1'])
                 pid = subprocess.check_output(["pidof", 'omxplayer.bin'])
                 pid = pid.replace("\n", "")
+                self.sem.release()
                 while check_pid(int(pid)):
-                    self.set_sem(1)
                     time.sleep(0.2)
-                    self.set_sem(0)
                 # close app
                 if self.close_flag == 1:
                     break
             except IOError, valid_link_error:
                 # TODO: implement algorithm to handle invalid URLs
-                self.sem = 0
+                #self.sem.acquire()
+                self.sem.release()
                 time.sleep(0)
             
 
