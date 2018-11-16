@@ -21,6 +21,7 @@ import random
 import subprocess
 import time
 import errno
+import getopt
 from keymap import CheckEvent
 from omxplayer.player import OMXPlayer
 from collections import namedtuple
@@ -123,13 +124,32 @@ class YouPlay(object):
                 time.sleep(0)
             
 
-def main(argin):
+def main(argv, argin):
     """Starting the main routine."""
-    if argin != None:
+    inputfile = ''
+    try:
+        opts, args = getopt.getopt(argv,"hi:")
+    except getopt.GetoptError:
+        print('youtubeplayer.py <options> -i <inputfile>')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('usage:\n\tyoutubeplayer.py <options> -i <inputfile>\n')
+            print('options:\n'\
+                '\t-rand\t= random playing videos\n'\
+                '\t-h\t= print help text')
+        elif opt == '-i':
+            inputfile = arg
+    if inputfile != '':
         youplayer = YouPlay()
+        #youplayer.set_options()
+        youplayer.start_player(inputfile)
+    elif argin != None:
+        youplayer = YouPlay()
+        #youplayer.set_options()
         youplayer.start_player(argin)
     else:
-        print 'Usage: youtubeplayer.py "<YoutubeVideoUrl>"\n'
+        print 'youtubeplayer.py <options> -i <inputfile>\n'
 
 if __name__ == "__main__":
-    sys.exit(main(sys.stdin))
+    sys.exit(main(sys.argv[1:], sys.stdin))

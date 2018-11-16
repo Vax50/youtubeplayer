@@ -138,5 +138,5 @@ class CheckEvent:
                     close_flag = 1
                     youplay.set_close_flag(close_flag)
                     youplay.close_video()
-                #os.system('clear')
+                os.system('clear')
             time.sleep(0.05)
