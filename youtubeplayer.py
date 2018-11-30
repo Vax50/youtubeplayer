@@ -47,6 +47,7 @@ class YouPlay(object):
     track_count = 0
     close_flag = 0
     sem = Semaphore()
+    options = dict([("-r", 0)])
 
     def get_player(self):
         """Returns the OMXPlayer object."""
@@ -68,12 +69,9 @@ class YouPlay(object):
         """Get semaphore."""
         return self.sem
 
-    def set_sem(self, sem_):
-        """Set semaphore."""
-        if sem_ == 0 and self.sem == 1:
-            self.sem = sem_
-        if sem_ == 1 and self.sem == 0:
-            self.sem = sem_
+    def set_option(self, option_name, option_value):
+        """set options"""
+        self.options[option_name] = option_value
 
     def close_video(self):
         """Quit a video."""
@@ -96,8 +94,10 @@ class YouPlay(object):
                 url = line
                 playlist.insert(listcount, url)
                 listcount += 1
-        randvalue = random.SystemRandom()
-        randvalue.shuffle(playlist)
+        """random playlist"""
+        if self.options["-r"] == 1:
+            randvalue = random.SystemRandom()
+            randvalue.shuffle(playlist)
         start_new_thread(checkevent.start_listen, (self,))
         while self.track_count < len(playlist):
             self.sem.acquire()
@@ -128,25 +128,26 @@ def main(argv, argin):
     """Starting the main routine."""
     inputfile = ''
     try:
-        opts, args = getopt.getopt(argv,"hi:")
+        opts, args = getopt.getopt(argv,"hri:")
     except getopt.GetoptError:
         print('youtubeplayer.py <options> -i <inputfile>')
         sys.exit(2)
+    youplayer = YouPlay()
     for opt, arg in opts:
         if opt == '-h':
             print('usage:\n\tyoutubeplayer.py <options> -i <inputfile>\n')
             print('options:\n'\
-                '\t-rand\t= random playing videos\n'\
+                '\t-r\t= random playing videos\n'\
                 '\t-h\t= print help text')
         elif opt == '-i':
             inputfile = arg
+        elif opt == '-r':
+            youplayer.set_option(opt, 1)
+        else:
+            youplayer.set_option(opt, arg)
     if inputfile != '':
-        youplayer = YouPlay()
-        #youplayer.set_options()
         youplayer.start_player(inputfile)
     elif argin != None:
-        youplayer = YouPlay()
-        #youplayer.set_options()
         youplayer.start_player(argin)
     else:
         print 'youtubeplayer.py <options> -i <inputfile>\n'
