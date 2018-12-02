@@ -47,7 +47,7 @@ class YouPlay(object):
     track_count = 0
     close_flag = 0
     sem = Semaphore()
-    options = dict([("-r", 0)])
+    options = dict([("-r", 0), ("-d", "keyboard")])
 
     def get_player(self):
         """Returns the OMXPlayer object."""
@@ -98,7 +98,7 @@ class YouPlay(object):
         if self.options["-r"] == 1:
             randvalue = random.SystemRandom()
             randvalue.shuffle(playlist)
-        start_new_thread(checkevent.start_listen, (self,))
+        start_new_thread(checkevent.start_listen, (self, self.options["-d"]))
         while self.track_count < len(playlist):
             self.sem.acquire()
             video_url = playlist[self.track_count]
@@ -128,7 +128,7 @@ def main(argv, argin):
     """Starting the main routine."""
     inputfile = ''
     try:
-        opts, args = getopt.getopt(argv,"hri:")
+        opts, args = getopt.getopt(argv,"hri:d:")
     except getopt.GetoptError:
         print('youtubeplayer.py <options> -i <inputfile>')
         sys.exit(2)
@@ -138,19 +138,26 @@ def main(argv, argin):
             print('usage:\n\tyoutubeplayer.py <options> -i <inputfile>\n')
             print('options:\n'\
                 '\t-r\t= random playing videos\n'\
+                '\t-d\t= controller dev (xbox, keyboard)'
                 '\t-h\t= print help text')
-        elif opt == '-i':
-            inputfile = arg
+            sys.exit(2)
         elif opt == '-r':
             youplayer.set_option(opt, 1)
-        else:
-            youplayer.set_option(opt, arg)
+        elif opt == '-d':
+            if arg == 'xbox' or arg == 'keyboard':
+                youplayer.set_option(opt, arg)
+            else:
+                print('wrong -d option. (-h to see possible options)')
+                sys.exit(2)
+        elif opt == '-i':
+            inputfile = arg
     if inputfile != '':
         youplayer.start_player(inputfile)
     elif argin != None:
         youplayer.start_player(argin)
     else:
-        print 'youtubeplayer.py <options> -i <inputfile>\n'
+        print('youtubeplayer.py <options> -i <inputfile>\n')
+        sys.exit(2)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:], sys.stdin))

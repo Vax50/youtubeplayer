@@ -13,13 +13,14 @@ class CheckEvent:
     """Check for a controlerkey event and executes
     additional instructions."""
     play_pause_flag = 0
-    controller_dev = 0
+    controller_dev = 'keyboard'
     xbox_joy_dev_path = '/dev/input/js0'
     actionList = [8]
     xbox_joy_dev = None
 
-    def set_dev_type(self):
-        if self.controller_dev == 0:
+    def set_dev_type(self, _controller_dev):
+        self.controller_dev = _controller_dev
+        if self.controller_dev == 'xbox':
             self.actionList.insert(0, JoyKeyStruct(1, 1, 5))
             self.actionList.insert(1, JoyKeyStruct(1, 1, 4))
             self.actionList.insert(2, JoyKeyStruct(1, 1, 6))
@@ -28,7 +29,7 @@ class CheckEvent:
             self.actionList.insert(5, JoyKeyStruct(2, -32767, 5))
             self.actionList.insert(6, JoyKeyStruct(2, 32767, 5))
             self.actionList.insert(7, JoyKeyStruct(1, 1, 1))
-        elif self.controller_dev == 1:
+        elif self.controller_dev == 'keyboard':
             self.actionList.insert(0, 'f')
             self.actionList.insert(1, 'b')
             self.actionList.insert(2, 'left')
@@ -38,13 +39,13 @@ class CheckEvent:
             self.actionList.insert(6, 'down')
             self.actionList.insert(7, 'esc')
 
-    def __init__(self):
-        self.set_dev_type()
+    """def __init__(self, _controller_dev):
+        self.set_dev_type(_controller_dev)"""
 
     """Dev 0 = XboxJoy, Dev 1 = Keyboard"""
     def check_xbox_joy_dev(self):
         """Check if Input Device exists"""
-        if self.controller_dev == 0:
+        if self.controller_dev == 'xbox':
             while True:
                 try:
                     self.xbox_joy_dev = open(self.xbox_joy_dev_path, 'rb')
@@ -53,7 +54,7 @@ class CheckEvent:
                     time.sleep(1)
 
     def get_input_event(self):
-        if self.controller_dev == 0:
+        if self.controller_dev == 'xbox':
             try:
                 dev_buf = self.xbox_joy_dev.read(8)
                 if dev_buf:
@@ -67,7 +68,7 @@ class CheckEvent:
                 except IOError:
                     time.sleep(1)
                     return False
-        if self.controller_dev == 1:
+        elif self.controller_dev == 'keyboard':
             try:
                 key_event = keyboard.read_event()
                 if key_event.event_type == 'down':
@@ -76,8 +77,9 @@ class CheckEvent:
             except IOError:
                 return False
 
-    def start_listen(self, youplay):
-        if self.controller_dev == 0:
+    def start_listen(self, youplay, _controller_dev):
+        self.set_dev_type(_controller_dev)
+        if self.controller_dev == 'xbox':
             self.check_xbox_joy_dev()
         sem = youplay.get_sem()
         while True:
