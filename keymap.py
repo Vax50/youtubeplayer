@@ -21,13 +21,21 @@ class CheckEvent:
     def set_dev_type(self, _controller_dev):
         self.controller_dev = _controller_dev
         if self.controller_dev == 'xbox':
+            # rb
             self.actionList.insert(0, JoyKeyStruct(1, 1, 5))
+            # lb
             self.actionList.insert(1, JoyKeyStruct(1, 1, 4))
-            self.actionList.insert(2, JoyKeyStruct(1, 1, 6))
-            self.actionList.insert(3, JoyKeyStruct(1, 1, 7))
+            # lt
+            self.actionList.insert(2, JoyKeyStruct(2, 32767, 2))
+            # rt
+            self.actionList.insert(3, JoyKeyStruct(2, 32767, 5))
+            # a
             self.actionList.insert(4, JoyKeyStruct(1, 1, 0))
-            self.actionList.insert(5, JoyKeyStruct(2, -32767, 5))
-            self.actionList.insert(6, JoyKeyStruct(2, 32767, 5))
+            # d-pad up
+            self.actionList.insert(5, JoyKeyStruct(2, -32767, 7))
+            # d-pad down
+            self.actionList.insert(6, JoyKeyStruct(2, 32767, 7))
+            # b
             self.actionList.insert(7, JoyKeyStruct(1, 1, 1))
         elif self.controller_dev == 'keyboard':
             self.actionList.insert(0, 'f')

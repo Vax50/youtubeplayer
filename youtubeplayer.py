@@ -138,7 +138,7 @@ def main(argv, argin):
             print('usage:\n\tyoutubeplayer.py <options> -i <inputfile>\n')
             print('options:\n'\
                 '\t-r\t= random playing videos\n'\
-                '\t-d\t= controller dev (xbox, keyboard)'
+                '\t-d\t= controller dev (xbox, keyboard)\n'\
                 '\t-h\t= print help text')
             sys.exit(2)
         elif opt == '-r':
